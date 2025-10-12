@@ -2,6 +2,8 @@
 import express from "express";
 import dotenv from "dotenv";
 import mainRouter from "./routes/index.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
+app.use(errorHandler);
 dotenv.config();
 
 const app = express();
