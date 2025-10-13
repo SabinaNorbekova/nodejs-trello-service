@@ -1,4 +1,5 @@
-// src/routes/board.routes.js
+// src/routes/boards.routes.js
+import { verifyToken } from "../middleware/auth.middleware.js";
 import { Router } from "express"
 import {
     getAllBoards,
@@ -10,10 +11,9 @@ import {
 
 const boardsRouter = Router()
 
-boardsRouter.get("/", getAllBoards)
-boardsRouter.get("/:id", getBoardById)
-boardsRouter.post("/", createBoard)
-boardsRouter.put("/:id", updateBoard)
-boardsRouter.delete("/:id", deleteBoard)
-
+boardsRouter.get("/", verifyToken, getAllBoards)
+boardsRouter.get("/:id", verifyToken, getBoardById)
+boardsRouter.post("/", verifyToken, createBoard)
+boardsRouter.put("/:id", verifyToken, updateBoard)
+boardsRouter.delete("/:id", verifyToken, deleteBoard)
 export default boardsRouter
