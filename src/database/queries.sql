@@ -20,5 +20,5 @@ CREATE TABLE tasks (
     description VARCHAR(255),
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     board_id INTEGER REFERENCES boards(id) ON DELETE CASCADE,
-    column_id INTEGER
+    column_id INTEGER 
 );
