@@ -1,8 +1,8 @@
 //auth.controller.js
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
-import { pool } from "../config/database.js"
-import { registerSchema, loginSchema } from "../validation/user.validation.js"
+import pool  from "../config/database.js"
+import { registerSchema, loginSchema } from "../validation/users.validation.js"
 
 export const registerUser = async (req, res, next) => {
     try {
@@ -20,16 +20,16 @@ export const registerUser = async (req, res, next) => {
         const result = await pool.query(
             `INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email`,
             [name, email, hashedPassword]
-        );
+        )
 
         res.status(201).json({
             message: "User registered successfully",
             user: result.rows[0],
         });
     } catch (err) {
-        next(err);
+        next(err)
     }
-};
+}
 
 export const loginUser = async (req, res, next) => {
     try {
@@ -50,7 +50,7 @@ export const loginUser = async (req, res, next) => {
             { id: user.id, email: user.email },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
-        );
+        )
 
         res.json({ message: "Login successful", token })
     } catch (err) {
