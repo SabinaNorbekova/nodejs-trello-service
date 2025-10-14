@@ -1,19 +1,13 @@
 // src/routes/board.routes.js
 import { Router } from "express"
-import {
-    getAllTasks,
-    getTaskById,
-    updateTask,
-    deleteTask,
-    createTask
-} from "../controllers/tasks.controller.js"
+import {taskController} from "../controllers/tasks.controller.js"
 
-const tasksRouter = Router()
+const tasksRouter = Router({ mergeParams: true })
 
-tasksRouter.get("/", getAllTasks)
-tasksRouter.get("/:id", getTaskById)
-tasksRouter.post("/", createTask)
-tasksRouter.put("/:id", updateTask)
-tasksRouter.delete("/:id", deleteTask)
+tasksRouter.get("/", taskController.getAll)
+tasksRouter.get("/:task_id", taskController.getById)
+tasksRouter.post("/", taskController.create)
+tasksRouter.put("/:task_id", taskController.update)
+tasksRouter.delete("/:task_id", taskController.remove)
 
 export default tasksRouter
