@@ -1,8 +1,36 @@
 //auth.controller.js
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
-import pool  from "../config/database.js"
+import pool from "../config/database.js"
 import { registerSchema, loginSchema } from "../validation/users.validation.js"
+
+export const loginUser = async (req, res, next) => {
+    try {
+        const { error } = loginSchema.validate(req.body);
+        if (error) return res.status(400).json({ message: error.details[0].message })
+
+        const { email, password } = req.body;
+
+        const result = await pool.query("SELECT * FROM users WHERE email=$1", [email])
+        if (result.rows.length === 0)
+            return res.status(404).json({ message: "User not found" })
+
+        const user = result.rows[0];
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) return res.status(401).json({ message: "Invalid credentials" })
+
+        const token = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        )
+
+        res.json({ message: "Login successful", token })
+    } catch (err) {
+        next(err)
+    }
+}
+
 
 export const registerUser = async (req, res, next) => {
     try {
@@ -31,31 +59,5 @@ export const registerUser = async (req, res, next) => {
     }
 }
 
-export const loginUser = async (req, res, next) => {
-    try {
-        const { error } = loginSchema.validate(req.body);
-        if (error) return res.status(400).json({ message: error.details[0].message })
-
-        const { email, password } = req.body;
-
-        const result = await pool.query("SELECT * FROM users WHERE email=$1", [email])
-        if (result.rows.length === 0)
-            return res.status(404).json({ message: "User not found" })
-
-        const user = result.rows[0];
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) return res.status(401).json({ message: "Invalid credentials" })
-
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
-        )
-
-        res.json({ message: "Login successful", token })
-    } catch (err) {
-        next(err)
-    }
-}
 
 
