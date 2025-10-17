@@ -1,75 +1,114 @@
 // src/controllers/base.controller.js
 import pool from "../config/database.js"
-import { paginate } from "../helpers/utils.js";
+import { paginate } from "../helpers/utils.js"
 
-export const createBaseController = (tableName) => ({
-    getAll: async (req, res, next) => {
-        try {
-            const { page = 1, limit = 10 } = req.query;
-            const result = await paginate(pool, tableName, page, limit);
-            res.status(200).json({ success: true, ...result });
-        } catch (err) {
-            next(err);
-        }
-    },
+export default class BaseController {
+  constructor(tableName) {
+    this.tableName = tableName
+    this.getAll = this.getAll.bind(this)
+    this.getById = this.getById.bind(this)
+    this.create = this.create.bind(this)
+    this.update = this.update.bind(this)
+    this.remove = this.remove.bind(this)
+  }
 
-    getById: async (req, res, next) => {
-        try {
-            const { id } = req.params
-            const result = await pool.query(`SELECT * FROM ${tableName} WHERE id = $1`, [id])
-            if (result.rows.length === 0)
-                return res.status(404).json({ success: false, message: `${tableName} not found` })
-            res.status(200).json({ success: true, data: result.rows[0] })
-        } catch (err) {
-            next(err)
-        }
-    },
+  async getAll(req, res, next) {
+    try {
+      const { page = 1, limit = 10 } = req.query
+      let userId = null
+      if (this.tableName !== 'users' && req.user) {
+        userId = req.user.id
+      }
+      const result = await paginate(pool, this.tableName, page, limit, userId)
+      if (this.tableName === 'users' && req.user) {
+        result.data = result.data.filter(user => user.id === req.user.id)
+      }
+      res.status(200).json({ success: true, ...result })
+    } catch (err) {
+      next(err)
+    }
+  }
 
-    create: async (req, res, next) => {
-        try {
-            const fields = Object.keys(req.body)
-            const values = Object.values(req.body)
-            const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ")
+  async getById(req, res, next) {
+    try {
+      const { id } = req.params
+      let selectFields = '*'
+      if (this.tableName === 'users') {
+        selectFields = 'id, name, email'
+      }
+      const result = await pool.query(
+        `SELECT ${selectFields} FROM ${this.tableName} WHERE id = $1`,
+        [id]
+      );
+      if (result.rows.length === 0)
+        return res.status(404).json({ success: false, message: `${this.tableName} not found` });
+      res.status(200).json({ success: true, data: result.rows[0] })
+    } catch (err) {
+      next(err)
+    }
+  }
 
-            const query = `INSERT INTO ${tableName} (${fields.join(", ")})
-                     VALUES (${placeholders}) RETURNING *`
+  async create(req, res, next) {
+    try {
+      const fields = Object.keys(req.body);
+      const values = Object.values(req.body);
+      const placeholders = fields.map((_, i) => `$${i + 1}`).join(", ");
 
-            const result = await pool.query(query, values)
-            res.status(201).json({ success: true, data: result.rows[0] })
-        } catch (err) {
-            next(err)
-        }
-    },
+      const query = `
+        INSERT INTO ${this.tableName} (${fields.join(", ")})
+        VALUES (${placeholders})
+        RETURNING *
+      `;
 
-    update: async (req, res, next) => {
-        try {
-            const { id } = req.params
-            const fields = Object.keys(req.body)
-            const values = Object.values(req.body)
-            const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(", ")
+      const result = await pool.query(query, values);
+      res.status(201).json({ success: true, data: result.rows[0] });
+    } catch (err) {
+      next(err);
+    }
+  }
 
-            const query = `UPDATE ${tableName} SET ${setClause} WHERE id = $${fields.length + 1} RETURNING *`
-            const result = await pool.query(query, [...values, id])
+  async update(req, res, next) {
+    try {
+      const { id } = req.params;
+      const fields = Object.keys(req.body)
+      const values = Object.values(req.body)
+      const setClause = fields.map((f, i) => `${f} = $${i + 1}`).join(", ");
 
-            if (result.rows.length === 0)
-                return res.status(404).json({ success: false, message: `${tableName} not found` })
+      const query = `
+        UPDATE ${this.tableName}
+        SET ${setClause}
+        WHERE id = $${fields.length + 1}
+        RETURNING *
+      `;
 
-            res.status(200).json({ success: true, data: result.rows[0] })
-        } catch (err) {
-            next(err)
-        }
-    },
+      const result = await pool.query(query, [...values, id]);
 
-    remove: async (req, res, next) => {
-        try {
-            const { id } = req.params
-            const result = await pool.query(`DELETE FROM ${tableName} WHERE id = $1`, [id])
-            if (result.rowCount === 0)
-                return res.status(404).json({ success: false, message: `${tableName} not found` })
+      if (result.rows.length === 0)
+        return res.status(404).json({ success: false, message: `${this.tableName} not found` });
 
-            res.status(200).json({ success: true, message: `${tableName} deleted successfully` })
-        } catch (err) {
-            next(err)
-        }
-    },
-})
+      res.status(200).json({ success: true, data: result.rows[0] });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async remove(req, res, next) {
+    try {
+      const { id } = req.params;
+      const result = await pool.query(
+        `DELETE FROM ${this.tableName} WHERE id = $1 RETURNING id`,
+        [id]
+      )
+
+      if (result.rowCount === 0)
+        return res.status(404).json({ success: false, message: `${this.tableName} not found` })
+
+      res.status(200).json({
+        success: true,
+        message: `${this.tableName} deleted successfully`,
+      })
+    } catch (err) {
+      next(err)
+    }
+  }
+}
