@@ -1,3 +1,4 @@
+import express from "express"
 import { Router } from "express"
 
 import authRouter from "./auth.routes.js"
@@ -12,7 +13,7 @@ mainRouter.use("/boards", boardsRouter)
 mainRouter.use("/users", usersRouter)
 mainRouter.use("/boards/:board_id/tasks", (req, res, next) => {
     // parent param (board_id) ni child routerga uzatish uchun
-    req.board_id = req.params.board_id
+    req.board_id = req.params.board_id;
     next()
   }, tasksRouter)
   

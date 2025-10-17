@@ -9,7 +9,7 @@ export const checkTaskExists = async (req, res, next) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: "Task not found" })
         }
-        req.task = result.rows[0]
+        req.task = result.rows[0];
         next()
     } catch (err) {
         next(err)

@@ -1,15 +1,19 @@
-// src/routes/users.routes.js
+// src/routes/board.routes.js
 import { Router } from "express"
-import { userController } from "../controllers/users.controller.js"
-import { verifyToken } from "../middleware/auth.middleware.js"
-import { checkUserAccess, checkUserExists } from "../middleware/users.middleware.js"
+import {
+    getAllUsers,
+    getUserById,
+    updateUser,
+    deleteUser,
+    createUser
+} from "../controllers/users.controller.js"
 
 const usersRouter = Router()
 
-usersRouter.get("/", userController.getAll)
-usersRouter.get("/:id", verifyToken, checkUserExists, checkUserAccess, userController.getById)
-usersRouter.post("/", verifyToken, userController.create)
-usersRouter.put("/:id", verifyToken, checkUserExists, checkUserAccess, userController.update)
-usersRouter.delete("/:id", verifyToken, checkUserExists, checkUserAccess, userController.remove)
+usersRouter.get("/", getAllUsers)
+usersRouter.get("/:id", getUserById)
+usersRouter.post("/", createUser)
+usersRouter.put("/:id", updateUser)
+usersRouter.delete("/:id", deleteUser)
 
 export default usersRouter
